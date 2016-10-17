@@ -26,16 +26,26 @@ export function alignHorizontally(cm) {
     display.gutters.style.left = (comp + gutterW) + "px"
 }
 
+function measureLineNumberWidth(cm, lineNumber) {
+  let test = cm.display.measure.appendChild(elt("div", [elt("div", lineNumber)],
+                                            "CodeMirror-linenumber CodeMirror-gutter-elt"))
+  let innerW = test.firstChild.offsetWidth
+  let padding = test.offsetWidth - innerW
+  return { innerW, padding };
+}
+
 // Used to ensure that the line number gutter is still the right
 // size for the current document size. Returns true when an update
 // is needed.
 export function maybeUpdateLineNumberWidth(cm) {
   if (!cm.options.lineNumbers) return false
-  let doc = cm.doc, last = lineNumberFor(cm.options, doc.first + doc.size - 1), display = cm.display
+  let doc = cm.doc
+  let last = lineNumberFor(cm.options, doc.first + doc.size - 1)
+  let display = cm.display
   if (last.length != display.lineNumChars) {
-    let test = display.measure.appendChild(elt("div", [elt("div", last)],
-                                               "CodeMirror-linenumber CodeMirror-gutter-elt"))
-    let innerW = test.firstChild.offsetWidth, padding = test.offsetWidth - innerW
+    const measureLineNumberWidthFunc = cm._measurementOracle.measureLineNumberWidth || measureLineNumberWidth;
+    const {innerW, padding} = measureLineNumberWidthFunc(cm, last);
+
     display.lineGutter.style.width = ""
     display.lineNumInnerWidth = Math.max(innerW, display.lineGutter.offsetWidth - padding) + 1
     display.lineNumWidth = display.lineNumInnerWidth + padding

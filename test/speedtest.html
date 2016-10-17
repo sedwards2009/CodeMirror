@@ -126,6 +126,33 @@ function startUp() {
   });
 }
 
+let textHeightCache = -1;
+
+function clearMeasureCache() {
+  textHeightCache = -1;
+}
+
+function measureTextHeight(display, measureText) {
+  if (textHeightCache !== -1) {
+    return textHeightCache;
+  }
+
+  const measureDiv = display.measure;
+
+//  const style = window.getComputedStyle(measureDiv.getComputedStyle);
+
+  while(measureDiv.firstChild != null) {
+    measureDiv.removeChild(measureDiv.firstChild);
+  }    
+  measureDiv.appendChild(measureText);
+
+  const height = measureText.offsetHeight / 50;
+  measureDiv.removeChild(measureText);
+  textHeightCache = height || 1;
+
+  return textHeightCache;
+}
+
 function appendEditor(name) {
   const testGround = document.getElementById("testground");
   const newDiv = document.createElement("div");
@@ -134,7 +161,8 @@ function appendEditor(name) {
 
   const editor = CodeMirror(newDiv, {
     lineNumbers: true,
-    lineWrapping: false
+    lineWrapping: false,
+    measurementOracle: { measureTextHeight }
   });
   editor.getDoc().setValue(
 `Entire any had depend and figure winter. Change stairs and men likely wisdom new happen piqued six.

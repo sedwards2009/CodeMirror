@@ -32,6 +32,8 @@ export function CodeMirror(place, options) {
   this.options = options = options ? copyObj(options) : {}
   // Determine effective options based on given values and defaults.
   copyObj(defaults, options, false)
+
+  this._measurementOracle = this.options.measurementOracle || {};
   setGuttersForLineNumbers(options)
 
   let doc = options.value

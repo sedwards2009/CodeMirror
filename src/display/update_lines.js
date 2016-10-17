@@ -6,8 +6,15 @@ import { ie, ie_version } from "../util/browser"
 // Read the actual heights of the rendered lines, and update their
 // stored heights to match.
 export function updateHeightsInViewport(cm) {
+
+//----------
+  // Compute heights.
   let display = cm.display
-  let prevBottom = display.lineDiv.offsetTop
+console.timeStamp('updateHeightsInViewport start');
+  let prevBottom = display.lineDiv.offsetTop  // !!!!
+console.timeStamp('updateHeightsInViewport end');
+
+  const heights = [];
   for (let i = 0; i < display.view.length; i++) {
     let cur = display.view[i], height
     if (cur.hidden) continue
@@ -19,6 +26,14 @@ export function updateHeightsInViewport(cm) {
       let box = cur.node.getBoundingClientRect()
       height = box.bottom - box.top
     }
+    heights.push(height);
+  }
+//-----------
+
+  for (let i = 0; i < display.view.length; i++) {
+    let cur = display.view[i]
+    let height = heights[i]
+    if (cur.hidden) continue
     let diff = cur.line.height - height
     if (height < 2) height = textHeight(display)
     if (diff > .001 || diff < -.001) {

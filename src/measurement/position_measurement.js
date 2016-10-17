@@ -478,11 +478,21 @@ export function textHeight(display) {
     }
     measureText.appendChild(document.createTextNode("x"))
   }
+
+  const cm = display.wrapper.CodeMirror;
+  const measureHeightFunc = cm._measurementOracle.measureTextHeight || measureTextHeight;
+
+  const height = measureHeightFunc(display, measureText);
+  if (height > 3) display.cachedTextHeight = height
+
+  return height || 1
+}
+
+function measureTextHeight(display, measureText) {
   removeChildrenAndAdd(display.measure, measureText)
   let height = measureText.offsetHeight / 50
-  if (height > 3) display.cachedTextHeight = height
   removeChildren(display.measure)
-  return height || 1
+  return height || 1;
 }
 
 // Compute the default character width.
