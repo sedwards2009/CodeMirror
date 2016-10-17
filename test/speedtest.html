@@ -121,7 +121,6 @@ function startUp() {
   }
 
   document.getElementById("refresh").addEventListener('click', () => {
-    clearMeasureCache();
     editors.forEach( ed => ed.refresh() );
   });
 }
