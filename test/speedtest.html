@@ -121,7 +121,14 @@ function startUp() {
   }
 
   document.getElementById("refresh").addEventListener('click', () => {
-    editors.forEach( ed => ed.refresh() );
+    const asyncFuncs = editors.map( ed => ed.refreshAsync() );
+    let done = false;
+    while ( ! done) {
+      done = true;
+      for (let i=0; i<asyncFuncs.length; i++) {
+        done = asyncFuncs[i]() && done;
+      }
+    }
   });
 }
 

@@ -9,7 +9,7 @@ import { indentLine } from "../input/indent"
 import { triggerElectric } from "../input/input"
 import { onKeyDown, onKeyPress, onKeyUp } from "./key_events"
 import { getKeyMap } from "../input/keymap"
-import { methodOp, operation, runInOp } from "../display/operations"
+import { methodOp, methodOpAsync, operation, runInOp } from "../display/operations"
 import { clipLine, clipPos, cmp, Pos } from "../line/pos"
 import { charCoords, charWidth, clearCaches, clearLineMeasurementCache, coordsChar, cursorCoords, displayHeight, displayWidth, estimateLineHeights, fromCoordSystem, intoCoordSystem, scrollGap, textHeight } from "../measurement/position_measurement"
 import { Range } from "../model/selection"
@@ -451,6 +451,18 @@ export default function(CodeMirror) {
     operation: function(f){return runInOp(this, f)},
 
     refresh: methodOp(function() {
+      let oldHeight = this.display.cachedTextHeight
+      regChange(this)
+      this.curOp.forceUpdate = true
+      clearCaches(this)
+      this.scrollTo(this.doc.scrollLeft, this.doc.scrollTop)
+      updateGutterSpace(this)
+      if (oldHeight == null || Math.abs(oldHeight - textHeight(this.display)) > .5)
+        estimateLineHeights(this)
+      signal(this, "refresh", this)
+    }),
+
+    refreshAsync: methodOpAsync(function() {
       let oldHeight = this.display.cachedTextHeight
       regChange(this)
       this.curOp.forceUpdate = true

@@ -45,28 +45,44 @@ export function startOperation(cm) {
 
 // Finish an operation, updating the display and signalling delayed events
 export function endOperation(cm) {
+  const steps = endOperationAsync(cm);
+  while (steps() == false) ;
+}
+
+export function endOperationAsync(cm) {
   let op = cm.curOp
-  finishOperation(op, group => {
+  return finishOperation(op, group => {
     for (let i = 0; i < group.ops.length; i++)
       group.ops[i].cm.curOp = null
-    endOperations(group)
-  })
+    return endOperations(group)
+  });
 }
 
 // The DOM updates done when an operation finishes are batched so
 // that the minimum number of relayouts are required.
 function endOperations(group) {
   let ops = group.ops
-  for (let i = 0; i < ops.length; i++) // Read DOM
-    endOperation_R1(ops[i])
-  for (let i = 0; i < ops.length; i++) // Write DOM (maybe)
-    endOperation_W1(ops[i])
-  for (let i = 0; i < ops.length; i++) // Read DOM
-    endOperation_R2(ops[i])
-  for (let i = 0; i < ops.length; i++) // Write DOM (maybe)
-    endOperation_W2(ops[i])
-  for (let i = 0; i < ops.length; i++) // Read DOM
-    endOperation_finish(ops[i])
+  let runStep = 0;
+
+  const funcs = [
+    endOperation_R1, // Read DOM
+    endOperation_W1, // Write DOM (maybe)
+    endOperation_R2, // Read DOM
+    endOperation_W2, // Write DOM (maybe)
+    endOperation_finish
+  ];
+
+  return function run() {
+    if (runStep >= funcs.length) {
+      return true;
+    }
+    const func = funcs[runStep];
+    for (let i = 0; i < ops.length; i++) {
+      func(ops[i]);
+    }
+    runStep++;
+    return false;
+  };
 }
 
 function endOperation_R1(op) {
@@ -204,6 +220,20 @@ export function methodOp(f) {
     finally { endOperation(this) }
   }
 }
+
+export function methodOpAsync(f) {
+  return function() {
+    if (this.curOp) {
+      f.apply(this, arguments);
+      return () => false;
+    }
+
+    startOperation(this)
+    try { f.apply(this, arguments) }
+    finally { return endOperationAsync(this) }
+  }
+}
+
 export function docMethodOp(f) {
   return function() {
     let cm = this.cm
