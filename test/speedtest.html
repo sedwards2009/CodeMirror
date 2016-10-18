@@ -46,7 +46,12 @@
 <script src="../mode/dylan/dylan.js"></script>
 
 <style type="text/css">
-  .CodeMirror { border: 1px solid black; }
+  .CodeMirror { border: 1px solid black; height: 100%;}
+  .cm_container {
+    width: 500px;
+    height: 200px;
+    contain: strict;
+  }
 </style>
 
 <div id=nav>
@@ -129,10 +134,11 @@ function appendEditor(name) {
   const testGround = document.getElementById("testground");
   const newDiv = document.createElement("div");
   newDiv.id = name;
+  newDiv.classList.add("cm_container");
   testGround.appendChild(newDiv);
 
   const editor = CodeMirror(newDiv, {
-    lineNumbers: true,
+    //lineNumbers: true,
     lineWrapping: false
   });
   editor.getDoc().setValue(
