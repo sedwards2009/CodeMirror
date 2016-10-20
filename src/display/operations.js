@@ -45,44 +45,40 @@ export function startOperation(cm) {
 
 // Finish an operation, updating the display and signalling delayed events
 export function endOperation(cm) {
-  const steps = endOperationAsync(cm);
-  while (steps() == false) ;
+  let steps = coordinatedEndOperation(cm);
+  while (!steps()) ;
 }
 
-export function endOperationAsync(cm) {
+// Return a function which executes the display update and signalling phases when called repeatedly.
+export function coordinatedEndOperation(cm) {
   let op = cm.curOp
   return finishOperation(op, group => {
     for (let i = 0; i < group.ops.length; i++)
       group.ops[i].cm.curOp = null
     return endOperations(group)
-  });
+  })
 }
 
 // The DOM updates done when an operation finishes are batched so
 // that the minimum number of relayouts are required.
+// This returns a function which executes next update phase when
+// called repeatedly. It returns true to signal completion.
 function endOperations(group) {
-  let ops = group.ops
-  let runStep = 0;
-
-  const funcs = [
+  let ops = group.ops, runStep = 0, funcs = [
     endOperation_R1, // Read DOM
     endOperation_W1, // Write DOM (maybe)
     endOperation_R2, // Read DOM
     endOperation_W2, // Write DOM (maybe)
     endOperation_finish
-  ];
+  ]
 
   return function run() {
-    if (runStep >= funcs.length) {
-      return true;
-    }
-    const func = funcs[runStep];
-    for (let i = 0; i < ops.length; i++) {
-      func(ops[i]);
-    }
-    runStep++;
-    return false;
-  };
+    if (runStep >= funcs.length) return true
+    let func = funcs[runStep]
+    for (let i = 0; i < ops.length; ++i) func(ops[i])
+    runStep++
+    return false
+  }
 }
 
 function endOperation_R1(op) {
@@ -205,8 +201,8 @@ export function runInOp(cm, f) {
 export function coordinatedRunInOp(cm, f) {
   if (cm.curOp) return f()
   startOperation(cm)
-  f();
-  return endOperationAsync(cm);
+  f()
+  return coordinatedEndOperation(cm)
 }
 
 // Wraps a function in an operation. Returns the wrapped function.
