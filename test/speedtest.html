@@ -72,7 +72,10 @@
 
     <p>A test harness for doing optimization work for CodeMirror.</p>
 
-    <button id="refresh">Refresh</button>
+    <button id="refresh_old">Refresh Old</button>
+    <button id="refresh">Refresh Coordinated</button>
+    <button id="set_size_old">Old setSize()</button>
+    <button id="set_size">setSize()</button>
 
     <div id="testground"></div>
 
@@ -118,7 +121,7 @@ window.onload = startUp;
 let editors = null;
 
 function startUp() {
-  const EDITOR_COUNT = 10;
+  const EDITOR_COUNT = 100;
 
   editors  = [];
   for (let i=0; i<EDITOR_COUNT; i++) {
@@ -126,7 +129,11 @@ function startUp() {
   }
 
   document.getElementById("refresh").addEventListener('click', () => {
-    const asyncFuncs = editors.map( ed => ed.refreshAsync() );
+    const asyncFuncs = editors.map( ed => {
+      return ed.coordinatedOperation( () => {
+        ed.refresh();
+      });
+    } );
     let done = false;
     while ( ! done) {
       done = true;
@@ -135,6 +142,30 @@ function startUp() {
       }
     }
   });
+
+  document.getElementById("refresh_old").addEventListener('click', () => {
+    editors.forEach( ed => ed.refresh() );
+  });
+
+  document.getElementById("set_size_old").addEventListener('click', () => {
+    editors.forEach( ed => ed.setSize(null, null) );
+  });
+
+  document.getElementById("set_size").addEventListener('click', () => {
+    const asyncFuncs = editors.map( ed => {
+      return ed.coordinatedOperation( () => {
+        ed.setSize(null, null);
+      });
+    } );
+    let done = false;
+    while ( ! done) {
+      done = true;
+      for (let i=0; i<asyncFuncs.length; i++) {
+        done = asyncFuncs[i]() && done;
+      }
+    }
+  });
+
 }
 
 function appendEditor(name) {

@@ -201,6 +201,14 @@ export function runInOp(cm, f) {
   try { return f() }
   finally { endOperation(cm) }
 }
+
+export function coordinatedRunInOp(cm, f) {
+  if (cm.curOp) return f()
+  startOperation(cm)
+  f();
+  return endOperationAsync(cm);
+}
+
 // Wraps a function in an operation. Returns the wrapped function.
 export function operation(cm, f) {
   return function() {
@@ -218,19 +226,6 @@ export function methodOp(f) {
     startOperation(this)
     try { return f.apply(this, arguments) }
     finally { endOperation(this) }
-  }
-}
-
-export function methodOpAsync(f) {
-  return function() {
-    if (this.curOp) {
-      f.apply(this, arguments);
-      return () => false;
-    }
-
-    startOperation(this)
-    try { f.apply(this, arguments) }
-    finally { return endOperationAsync(this) }
   }
 }
 
